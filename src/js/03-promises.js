@@ -16,27 +16,24 @@ document.querySelector('.form').addEventListener('submit', async function (event
   const step = parseInt(formData.get('step'));
   const amount = parseInt(formData.get('amount'));
 
-  const promises = [];
+  let i = 0;
+  let accumulatedDelay = 0;
 
-  for (let i = 0; i < amount; i++) {
+  while (i < amount) {
     const position = i + 1;
-    const delay = firstDelay + i * step;
-    promises.push(createPromise(position, delay));
-  }
+    const delay = firstDelay + accumulatedDelay;
 
-  try {
-    const results = await Promise.allSettled(promises);
-    results.forEach((result) => {
-      const { position, delay } = result.value || result.reason;
-      const status = result.status === 'fulfilled' ? '✅ Fulfilled' : '❌ Rejected';
+    createPromise(position, delay)
+      .then(({ position, delay }) => {
+        console.log(`✅ Fulfilled promise ${position} in ${delay}ms`);
+        notiflix.Notify.success(`✅ Fulfilled promise ${position} in ${delay}ms`);
+      })
+      .catch(({ position, delay }) => {
+        console.log(`❌ Rejected promise ${position} in ${delay}ms`);
+        notiflix.Notify.failure(`❌ Rejected promise ${position} in ${delay}ms`);
+      });
 
-      if (result.status === 'fulfilled') {
-        notiflix.Notify.success(`${status} promise ${position} in ${delay}ms`);
-      } else if (result.status === 'rejected') {
-        notiflix.Notify.failure(`${status} promise ${position} in ${delay}ms`);
-      }
-    });
-  } catch (error) {
-    console.error('Error occurred:', error);
+    i++;
+    accumulatedDelay += step;
   }
 });
